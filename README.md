@@ -3,6 +3,8 @@ Proof-of-concept tool which enables shutting down servers exposing RDP to the in
 
 Please use this tool within an exclusive VM to not interfer with the automatic mouse movements and/or getting your private data screenshotted.
 
+Also, you need a Linux Distribution like Kali Linux with Xorg (not Wayland) to work since automatic mouse movements have been disabled in Wayland.
+
 # Installation
 ```
 git clone https://github.com/NexusFuzzy/RDBye
