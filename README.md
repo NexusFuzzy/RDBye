@@ -1,13 +1,15 @@
 # RDBye
 Proof-of-concept tool which enables shutting down servers exposing RDP to the internet which allow remote shutdown
 
+Please use this tool within an exclusive VM to not interfer with the automatic mouse movements and/or getting your private data screenshotted.
+
 # Installation
 ```
 git clone https://github.com/NexusFuzzy/RDBye
 python3 -m venv .
 source bin/activate
 pip3 install -r requirements.txt
-sudo apt install wmctrl scrot python3-tk python3-dev rdesktop python3-pil
+sudo apt install wmctrl scrot python3-tk python3-dev rdesktop python3-pil gnome-screenshot
 ```
 
 # Usage
