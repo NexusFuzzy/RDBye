@@ -38,3 +38,7 @@ If you get the error
 please run the following command:
 
 `xhost +SI:localuser:$(whoami)`
+
+# Get results from Shodan
+![image](https://github.com/user-attachments/assets/1c6d78a0-46bb-4658-9f8b-35b837b9b285)
+
