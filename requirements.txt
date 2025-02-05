@@ -2,3 +2,4 @@ pyautogui
 psutil
 pyfiglet
 requests
+Pillow
