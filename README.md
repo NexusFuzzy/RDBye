@@ -35,6 +35,9 @@ options:
 # Remarks
 rdbye relies on a screen resolution of 1690x920 to find the correct buttons. Please ensure that you are using this screen resolution within your virtual machine
 
+# Pivoting on existing IP addresses
+You might be interested in another tool I created (pyvot) to get more IP addresses you could be interested in: https://github.com/NexusFuzzy/pyvot
+
 # Known issues
 If you get the error 
 `Xlib.error.DisplayConnectionError: Can't connect to display ":0": b'Authorization required, but no authorization protocol specified\n'`
